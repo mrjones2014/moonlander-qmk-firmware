@@ -1,0 +1,69 @@
+name: Fetch and build layout
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+env:
+  LAYOUT_ID: "9QzP7"
+  LAYOUT_GEOMETRY: "moonlander"
+permissions:
+  contents: write
+jobs:
+  fetch-and-build-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: oryx
+      - name: Download the full history for the merge to work correctly
+        run: git pull --unshallow
+      - name: Download layout source
+        id: download-layout-source
+        run: |
+          response=$(curl --location 'https://oryx.zsa.io/graphql' \
+            --header 'Content-Type: application/json' \
+            --data '{"query":"query getLayout($hashId: String!, $revisionId: String!, $geometry: String) {layout(hashId: $hashId, geometry: $geometry, revisionId: $revisionId) {  revision { hashId, qmkVersion, title }}}","variables":{"hashId":"${{ env.LAYOUT_ID }}","geometry":"${{ env.LAYOUT_GEOMETRY }}","revisionId":"latest"}}' \
+            | jq '.data.layout.revision | [.hashId, .qmkVersion, .title]')
+
+          hash_id=$(echo "${response}" | jq -r '.[0]')
+          change_description=$(echo "${response}" | jq -r '.[2]')
+          if [[ -z "${change_description}" ]]; then
+            change_description="latest layout modification made with Oryx"
+          fi
+
+          curl -L "https://oryx.zsa.io/source/${hash_id}" -o source.zip
+          echo "change_description=${change_description}" >> "$GITHUB_OUTPUT"
+      - name: Unzip and update source files
+        run: |
+          # Extract Oryx layout directly to src/
+          unzip -oj source.zip '*_source/*' -d src/
+          rm source.zip
+      - name: Commit and Push Oryx changes
+        env:
+          CHANGE_DESCRIPTION: ${{ steps.download-layout-source.outputs.change_description }}
+        run: |
+          git config --local user.name "github-actions"
+          git config --local user.email "github-actions@github.com"
+          git add src/
+          printf "oryx: %s\n" "$CHANGE_DESCRIPTION" | git commit -F - || echo "No layout change"
+          git push
+      - name: Merge Oryx with custom QMK
+        run: |
+          git fetch origin master
+          git checkout -B master origin/master
+          git merge -Xignore-all-space oryx
+          git push
+      - name: Install Nix
+        uses: cachix/install-nix-action@v24
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - name: Build firmware with Nix
+        run: nix build
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: moonlander-${{ env.LAYOUT_ID }}-${{ github.sha }}
+          path: result/bin/moonlander-default.bin
+          if-no-files-found: error
