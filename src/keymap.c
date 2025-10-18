@@ -1,6 +1,4 @@
 #include QMK_KEYBOARD_H
-#include "os_detection.h"
-
 #include "version.h"
 #define MOON_LED_LEVEL LED_LEVEL
 #ifndef ZSA_SAFE_RANGE
@@ -386,99 +384,6 @@ tap_dance_action_t tap_dance_actions[] = {
 };
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  // Custom logic to unify keyboard shortcust across macOS and Linux on my Moonlander MK II
-  if (record->event.pressed) {
-    uint8_t mods = get_mods();
-
-    // In QMK, the "GUI" key is the "Command" key on macOS and the "Super" key on Linux
-    // Only intercept when GUI modifier is held
-    if (mods & MOD_MASK_GUI) {
-      os_variant_t detected_os = detected_host_os();
-      bool use_gui = (detected_os == OS_MACOS || detected_os == OS_IOS);
-
-      // Extract base keycode for mod-tap keys
-      uint16_t base_keycode = keycode;
-      if (IS_QK_MOD_TAP(keycode)) {
-        base_keycode = QK_MOD_TAP_GET_TAP_KEYCODE(keycode);
-      }
-
-      // Clear GUI modifier temporarily
-      uint8_t temp_mods = mods;
-      clear_mods();
-
-      bool handled = true;
-
-      switch (base_keycode) {
-        case KC_C:
-          use_gui ? tap_code16(LGUI(KC_C)) : tap_code16(LCTL(KC_C));
-          break;
-        case KC_V:
-          use_gui ? tap_code16(LGUI(KC_V)) : tap_code16(LCTL(KC_V));
-          break;
-        case KC_X:
-          use_gui ? tap_code16(LGUI(KC_X)) : tap_code16(LCTL(KC_X));
-          break;
-        case KC_Z:
-          if (mods & MOD_MASK_SHIFT) {
-            use_gui ? tap_code16(LGUI(LSFT(KC_Z))) : tap_code16(LCTL(LSFT(KC_Z)));
-          } else {
-            use_gui ? tap_code16(LGUI(KC_Z)) : tap_code16(LCTL(KC_Z));
-          }
-          break;
-        case KC_A:
-          use_gui ? tap_code16(LGUI(KC_A)) : tap_code16(LCTL(KC_A));
-          break;
-        case KC_S:
-          use_gui ? tap_code16(LGUI(KC_S)) : tap_code16(LCTL(KC_S));
-          break;
-        case KC_T:
-          if (mods & MOD_MASK_SHIFT) {
-            use_gui ? tap_code16(LGUI(LSFT(KC_T))) : tap_code16(LCTL(LSFT(KC_T)));
-          } else {
-            use_gui ? tap_code16(LGUI(KC_T)) : tap_code16(LCTL(KC_T));
-          }
-          break;
-        case KC_N:
-          if (mods & MOD_MASK_SHIFT) {
-            use_gui ? tap_code16(LGUI(LSFT(KC_N))) : tap_code16(LCTL(LSFT(KC_N)));
-          } else {
-            use_gui ? tap_code16(LGUI(KC_N)) : tap_code16(LCTL(KC_N));
-          }
-          break;
-        case KC_O:
-          use_gui ? tap_code16(LGUI(KC_O)) : tap_code16(LCTL(KC_O));
-          break;
-        case KC_F:
-          use_gui ? tap_code16(LGUI(KC_F)) : tap_code16(LCTL(KC_F));
-          break;
-        case KC_W:
-          use_gui ? tap_code16(LGUI(KC_W)) : tap_code16(LCTL(KC_W));
-          break;
-        case KC_Q:
-          use_gui ? tap_code16(LGUI(KC_Q)) : tap_code16(LCTL(KC_Q));
-          break;
-        case KC_R:
-          use_gui ? tap_code16(LGUI(KC_R)) : tap_code16(LCTL(KC_R));
-          break;
-        case KC_LEFT:
-          use_gui ? tap_code16(LGUI(KC_LEFT)) : tap_code16(KC_HOME);
-          break;
-        case KC_RIGHT:
-          use_gui ? tap_code16(LGUI(KC_RIGHT)) : tap_code16(KC_END);
-          break;
-        default:
-          handled = false;
-          break;
-      }
-
-      if (handled) {
-        set_mods(temp_mods);
-        return false;  // We handled it, stop processing
-      }
-      set_mods(temp_mods);
-    }
-  }
-
   switch (keycode) {
   case QK_MODS ... QK_MODS_MAX: 
     // Mouse keys with modifiers work inconsistently across operating systems, this makes sure that modifiers are always
@@ -523,3 +428,4 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   }
   return true;
 }
+
