@@ -25,13 +25,24 @@
         pkgs = import nixpkgs {
           inherit system;
         };
-        build = import ./build.nix { inherit (pkgs) lib stdenv qmk; };
+        build = import ./nix/build.nix { inherit (pkgs) lib stdenv qmk; };
+        setup-lsp = import ./nix/setup-lsp.nix {
+          inherit pkgs;
+          inherit qmk-firmware;
+        };
       in
       {
         packages.default = build {
           inherit qmk-firmware;
           keyboard = "zsa/moonlander";
           src = ./src;
+        };
+        devShells.default = pkgs.mkShell {
+          QMK_HOME = "${qmk-firmware}";
+          packages = [
+            pkgs.qmk
+            setup-lsp
+          ];
         };
       }
     );
