@@ -101,6 +101,9 @@
     Add:
       # FORCE clang to show ALL errors (don't stop after 20)
       - -ferror-limit=0
+      # Force it to use C instead of Objective-C++ (for whatever reason the .h file is defaulting to that)
+      - -x
+      - c
 
       # System headers
       - -resource-dir=${pkgs.clang}/resource-root
@@ -136,6 +139,24 @@
       # ZSA Oryx module (for rawhid_state)
       - -I${qmk-firmware}/modules/zsa/oryx
       - -include${qmk-firmware}/modules/zsa/oryx/oryx.h
+
+      # ChibiOS RTOS headers (for CH_CFG_ST_FREQUENCY, sysinterval_t)
+      - -I${qmk-firmware}/lib/chibios/os/rt/include
+      - -I${qmk-firmware}/lib/chibios/os/common/ports/ARMv7-M
+      - -I${qmk-firmware}/platforms/chibios
+      - -I${qmk-firmware}/platforms/chibios/boards/GENERIC_STM32_F303XC
+      # explicitly include these headers to get around conditional includes
+      - -include${qmk-firmware}/platforms/chibios/boards/GENERIC_STM32_F303XC/configs/chconf.h
+      - -include${qmk-firmware}/lib/chibios/os/rt/include/chtime.h
+      - -DCH_CFG_ST_FREQUENCY=10000
+      - -DCH_CFG_ST_RESOLUTION=32
+      # Force-include ChibiOS configuration (defines sysinterval_t)
+      - -include${qmk-firmware}/platforms/chibios/boards/GENERIC_STM32_F303XC/configs/chconf.h
+      - -include${qmk-firmware}/lib/chibios/os/rt/include/chtime.h
+
+      # QMK timing functions (stub macros for LSP)
+      - -D_delay_ms(ms)=do{}while(0)
+      - -D_delay_us(us)=do{}while(0)
 
       # Your local project
       - -I$(pwd)
