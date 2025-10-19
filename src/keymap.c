@@ -1,3 +1,4 @@
+#include "keycodes.h"
 #include QMK_KEYBOARD_H
 #include "os_detection.h"
 #include "version.h"
@@ -11,6 +12,7 @@ enum custom_keycodes {
   ST_MACRO_0,
   ST_MACRO_1,
   ST_MACRO_2,
+  DEL_WORD,
 };
 
 enum tap_dance_codes {
@@ -42,7 +44,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_RPRN, KC_LABK, KC_RABK, KC_TRANSPARENT, KC_F12, KC_PAGE_UP,
         KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_F3,
         KC_F4, KC_UNDS, KC_LBRC, KC_RBRC, KC_TRANSPARENT, KC_TRANSPARENT,
-        KC_TRANSPARENT, LALT(KC_BSPC), KC_PGDN, KC_TRANSPARENT, KC_TRANSPARENT,
+        KC_TRANSPARENT, DEL_WORD, KC_PGDN, KC_TRANSPARENT, KC_TRANSPARENT,
         KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_LABK, KC_RABK,
         KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
         KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, LALT(KC_LEFT),
@@ -583,16 +585,33 @@ tap_dance_action_t tap_dance_actions[] = {
 };
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  os_variant_t detected_os = detected_host_os();
+  bool is_apple = (detected_os == OS_MACOS || detected_os == OS_IOS);
   // Custom logic to unify keyboard shortcust across macOS and Linux on my
   // Moonlander MK II
   if (record->event.pressed) {
-    uint8_t mods = get_mods();
 
+    // "Delete Word" keycode handling
+    if (keycode == DEL_WORD) {
+      if (is_apple) {
+        // Alt+Backspace on macOS
+        register_code(KC_LALT);
+        tap_code(KC_BSPC);
+        unregister_code(KC_LALT);
+      } else {
+        // Ctrl+Backspace on Linux
+        register_code(KC_LCTL);
+        tap_code(KC_BSPC);
+        unregister_code(KC_LCTL);
+      }
+      return true;
+    }
+
+    // Common Cmd/Ctrl key shortcuts handling
+    uint8_t mods = get_mods();
     // In QMK, the "GUI" key is the "Command" key on macOS and the "Super" key
     // on Linux Only intercept when GUI modifier is held
     if (mods & MOD_MASK_GUI) {
-      os_variant_t detected_os = detected_host_os();
-      bool use_gui = (detected_os == OS_MACOS || detected_os == OS_IOS);
 
       // Extract base keycode for mod-tap keys
       uint16_t base_keycode = keycode;
@@ -608,61 +627,64 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
       switch (base_keycode) {
       case KC_C:
-        use_gui ? tap_code16(LGUI(KC_C)) : tap_code16(LCTL(KC_C));
+        is_apple ? tap_code16(LGUI(KC_C)) : tap_code16(LCTL(KC_C));
         break;
       case KC_V:
-        use_gui ? tap_code16(LGUI(KC_V)) : tap_code16(LCTL(KC_V));
+        is_apple ? tap_code16(LGUI(KC_V)) : tap_code16(LCTL(KC_V));
         break;
       case KC_X:
-        use_gui ? tap_code16(LGUI(KC_X)) : tap_code16(LCTL(KC_X));
+        is_apple ? tap_code16(LGUI(KC_X)) : tap_code16(LCTL(KC_X));
         break;
       case KC_Z:
         if (mods & MOD_MASK_SHIFT) {
-          use_gui ? tap_code16(LGUI(LSFT(KC_Z))) : tap_code16(LCTL(LSFT(KC_Z)));
+          is_apple ? tap_code16(LGUI(LSFT(KC_Z)))
+                   : tap_code16(LCTL(LSFT(KC_Z)));
         } else {
-          use_gui ? tap_code16(LGUI(KC_Z)) : tap_code16(LCTL(KC_Z));
+          is_apple ? tap_code16(LGUI(KC_Z)) : tap_code16(LCTL(KC_Z));
         }
         break;
       case KC_A:
-        use_gui ? tap_code16(LGUI(KC_A)) : tap_code16(LCTL(KC_A));
+        is_apple ? tap_code16(LGUI(KC_A)) : tap_code16(LCTL(KC_A));
         break;
       case KC_S:
-        use_gui ? tap_code16(LGUI(KC_S)) : tap_code16(LCTL(KC_S));
+        is_apple ? tap_code16(LGUI(KC_S)) : tap_code16(LCTL(KC_S));
         break;
       case KC_T:
         if (mods & MOD_MASK_SHIFT) {
-          use_gui ? tap_code16(LGUI(LSFT(KC_T))) : tap_code16(LCTL(LSFT(KC_T)));
+          is_apple ? tap_code16(LGUI(LSFT(KC_T)))
+                   : tap_code16(LCTL(LSFT(KC_T)));
         } else {
-          use_gui ? tap_code16(LGUI(KC_T)) : tap_code16(LCTL(KC_T));
+          is_apple ? tap_code16(LGUI(KC_T)) : tap_code16(LCTL(KC_T));
         }
         break;
       case KC_N:
         if (mods & MOD_MASK_SHIFT) {
-          use_gui ? tap_code16(LGUI(LSFT(KC_N))) : tap_code16(LCTL(LSFT(KC_N)));
+          is_apple ? tap_code16(LGUI(LSFT(KC_N)))
+                   : tap_code16(LCTL(LSFT(KC_N)));
         } else {
-          use_gui ? tap_code16(LGUI(KC_N)) : tap_code16(LCTL(KC_N));
+          is_apple ? tap_code16(LGUI(KC_N)) : tap_code16(LCTL(KC_N));
         }
         break;
       case KC_O:
-        use_gui ? tap_code16(LGUI(KC_O)) : tap_code16(LCTL(KC_O));
+        is_apple ? tap_code16(LGUI(KC_O)) : tap_code16(LCTL(KC_O));
         break;
       case KC_F:
-        use_gui ? tap_code16(LGUI(KC_F)) : tap_code16(LCTL(KC_F));
+        is_apple ? tap_code16(LGUI(KC_F)) : tap_code16(LCTL(KC_F));
         break;
       case KC_W:
-        use_gui ? tap_code16(LGUI(KC_W)) : tap_code16(LCTL(KC_W));
+        is_apple ? tap_code16(LGUI(KC_W)) : tap_code16(LCTL(KC_W));
         break;
       case KC_Q:
-        use_gui ? tap_code16(LGUI(KC_Q)) : tap_code16(LCTL(KC_Q));
+        is_apple ? tap_code16(LGUI(KC_Q)) : tap_code16(LCTL(KC_Q));
         break;
       case KC_R:
-        use_gui ? tap_code16(LGUI(KC_R)) : tap_code16(LCTL(KC_R));
+        is_apple ? tap_code16(LGUI(KC_R)) : tap_code16(LCTL(KC_R));
         break;
       case KC_LEFT:
-        use_gui ? tap_code16(LGUI(KC_LEFT)) : tap_code16(KC_HOME);
+        is_apple ? tap_code16(LGUI(KC_LEFT)) : tap_code16(KC_HOME);
         break;
       case KC_RIGHT:
-        use_gui ? tap_code16(LGUI(KC_RIGHT)) : tap_code16(KC_END);
+        is_apple ? tap_code16(LGUI(KC_RIGHT)) : tap_code16(KC_END);
         break;
       default:
         handled = false;
