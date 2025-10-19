@@ -32,9 +32,15 @@ nvim src/keymap.c
 
 Building the firmware is a Nix derivation:
 
-```
+```bash
 nix build
 # outputs to ./result/bin/moonlander-default.{bin,elf,hex}
+```
+
+You can also build + flash the firmware in one step by running:
+
+```bash
+nix build .#flash
 ```
 
 ## Project structure
