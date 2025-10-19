@@ -1,4 +1,6 @@
 #include "keycodes.h"
+#include "quantum.h"
+#include "unicode.h"
 #include QMK_KEYBOARD_H
 #include "os_detection.h"
 #include "version.h"
@@ -32,7 +34,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         KC_I, KC_O, KC_P, KC_BSLS, KC_LEFT_SHIFT, KC_A, KC_S, KC_D, KC_F, KC_G,
         KC_HYPR, KC_MEH, KC_H, KC_J, KC_K, KC_L, KC_SCLN, KC_QUOTE, KC_GRAVE,
         MT(MOD_LCTL, KC_Z), KC_X, KC_C, KC_V, KC_B, KC_N, KC_M, KC_COMMA,
-        KC_DOT, KC_SLASH, KC_EQUAL, KC_LEFT_CTRL, KC_TRANSPARENT, KC_LEFT_ALT,
+        KC_DOT, KC_SLASH, KC_EQUAL, KC_LEFT_CTRL, QK_LEADER, KC_LEFT_ALT,
         KC_LEFT, KC_RIGHT, KC_LEFT_ALT, LGUI(KC_SPACE), KC_DOWN, KC_UP, KC_LBRC,
         KC_RBRC, TD(DANCE_2), KC_SPACE, KC_BSPC, KC_LEFT_GUI,
         LCTL(LSFT(KC_SPACE)), KC_LEFT_SHIFT, LT(1, KC_ENTER)),
@@ -205,6 +207,28 @@ void set_layer_color(int layer) {
       RGB rgb = hsv_to_rgb_with_value(hsv);
       rgb_matrix_set_color(i, rgb.r, rgb.g, rgb.b);
     }
+  }
+}
+
+void handle_send_unicode(const char *str) {
+  os_variant_t detected_os = detected_host_os();
+  if (detected_os == OS_MACOS) {
+    set_unicode_input_mode(UNICODE_MODE_MACOS);
+  } else if (detected_os == OS_LINUX) {
+    set_unicode_input_mode(UNICODE_MODE_LINUX);
+  } else {
+    return;
+  }
+  unicode_input_start();
+  send_unicode_string(str);
+  unicode_input_finish();
+}
+
+void leader_end_user(void) {
+  if (leader_sequence_two_keys(KC_S, KC_H)) {
+    handle_send_unicode("¯\\_(ツ)_/¯");
+  } else if (leader_sequence_two_keys(KC_T, KC_F)) {
+    handle_send_unicode("(╯°□°)╯︵ ┻━┻");
   }
 }
 

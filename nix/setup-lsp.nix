@@ -158,6 +158,17 @@
       - -D_delay_ms(ms)=do{}while(0)
       - -D_delay_us(us)=do{}while(0)
 
+      ## Extra feature headers
+      # Leader Key functions
+      - -include${qmk-firmware}/quantum/leader.h
+
+      # Unicode function (set_unicode_input_mode, send_unicode_string) stubs
+      - -include${qmk-firmware}/quantum/unicode/unicode.h
+      - -include${qmk-firmware}/quantum/process_keycode/process_unicode_common.h
+
+      # OS Detection functions (detected_host_os, os_is_macos, etc.)
+      - -include${qmk-firmware}/quantum/os_detection.h
+
       # Your local project
       - -I$(pwd)
       - -I$(pwd)/src
@@ -209,6 +220,9 @@
       - -DMATRIX_ROWS=12
       - -DMATRIX_COLS=7
       - -DORYX_CONFIGURATOR
+      - -DLEADER_ENABLE
+      - -DUNICODE_ENABLE
+      - -DOS_DETECTION_ENABLE
 
       # ChibiOS
       - -DHAL_USE_I2C=TRUE
