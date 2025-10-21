@@ -710,6 +710,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
       case KC_RIGHT:
         is_apple ? tap_code16(LGUI(KC_RIGHT)) : tap_code16(KC_END);
         break;
+      case KC_DOT:
+        is_apple ? tap_code16(LGUI(KC_DOT)) : tap_code16(LCTL(KC_DOT));
+        break;
+      case KC_L:
+        is_apple ? tap_code16(LGUI(KC_L)) : tap_code16(LCTL(KC_L));
+        break;
       default:
         handled = false;
         break;
