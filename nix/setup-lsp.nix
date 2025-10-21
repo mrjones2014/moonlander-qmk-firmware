@@ -110,7 +110,12 @@
       - -isystem
       - ${pkgs.clang}/resource-root/include
       - -isystem
-      - ${pkgs.glibc.dev}/include
+      - ${
+        if pkgs.stdenv.isLinux then
+          "${pkgs.glibc.dev}/include"
+        else
+          "$(xcrun --sdk macosx --show-sdk-path)/usr/include"
+      }
 
       # Standard C types
       - -Duint8_t=unsigned char
@@ -165,6 +170,9 @@
       # Unicode function (set_unicode_input_mode, send_unicode_string) stubs
       - -include${qmk-firmware}/quantum/unicode/unicode.h
       - -include${qmk-firmware}/quantum/process_keycode/process_unicode_common.h
+
+      # Colors
+      - -include${qmk-firmware}/quantum/color.h
 
       # OS Detection functions (detected_host_os, os_is_macos, etc.)
       - -include${qmk-firmware}/quantum/os_detection.h
