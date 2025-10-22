@@ -1,3 +1,4 @@
+#include "action_util.h"
 #include "keycodes.h"
 #include "quantum.h"
 #include "unicode.h"
@@ -608,6 +609,37 @@ tap_dance_action_t tap_dance_actions[] = {
                                              dance_5_reset),
 };
 
+// Declaratively define cross-OS GUI/Ctrl shortcuts
+
+typedef struct {
+  uint16_t keycode;
+  uint8_t other_allowed_mods;
+} gui_shortcut_t;
+
+#define GUI_ENTRY(key, allowed) {key, allowed}
+
+static const gui_shortcut_t gui_shortcuts[] = {
+    GUI_ENTRY(KC_C, 0),
+    GUI_ENTRY(KC_V, 0),
+    GUI_ENTRY(KC_X, 0),
+    GUI_ENTRY(KC_Z, MOD_MASK_SHIFT),
+    GUI_ENTRY(KC_A, 0),
+    GUI_ENTRY(KC_S, 0),
+    GUI_ENTRY(KC_T, MOD_MASK_SHIFT),
+    GUI_ENTRY(KC_N, MOD_MASK_SHIFT),
+    GUI_ENTRY(KC_O, 0),
+    GUI_ENTRY(KC_F, 0),
+    GUI_ENTRY(KC_W, 0),
+    GUI_ENTRY(KC_Q, 0),
+    GUI_ENTRY(KC_R, 0),
+    GUI_ENTRY(KC_LEFT, 0),
+    GUI_ENTRY(KC_RIGHT, 0),
+    GUI_ENTRY(KC_DOT, 0),
+    GUI_ENTRY(KC_L, 0),
+};
+
+#define GUI_SHORTCUT_COUNT (sizeof(gui_shortcuts) / sizeof(gui_shortcuts[0]))
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   os_variant_t detected_os = detected_host_os();
   bool is_apple = (detected_os == OS_MACOS || detected_os == OS_IOS);
@@ -636,96 +668,40 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     // In QMK, the "GUI" key is the "Command" key on macOS and the "Super" key
     // on Linux Only intercept when GUI modifier is held
     if (mods & MOD_MASK_GUI) {
-
-      // Extract base keycode for mod-tap keys
       uint16_t base_keycode = keycode;
       if (IS_QK_MOD_TAP(keycode)) {
         base_keycode = QK_MOD_TAP_GET_TAP_KEYCODE(keycode);
       }
 
-      // Clear GUI modifier temporarily
-      uint8_t temp_mods = mods;
-      clear_mods();
+      for (uint8_t i = 0; i < GUI_SHORTCUT_COUNT; i++) {
+        const gui_shortcut_t *entry = &gui_shortcuts[i];
+        if (entry->keycode != base_keycode) {
+          continue;
+        }
 
-      bool handled = true;
+        // Compute non-GUI modifiers currently held.
+        uint8_t extra = mods & ~MOD_MASK_GUI;
 
-      switch (base_keycode) {
-      case KC_C:
-        is_apple ? tap_code16(LGUI(KC_C)) : tap_code16(LCTL(KC_C));
-        break;
-      case KC_V:
-        is_apple ? tap_code16(LGUI(KC_V)) : tap_code16(LCTL(KC_V));
-        break;
-      case KC_X:
-        is_apple ? tap_code16(LGUI(KC_X)) : tap_code16(LCTL(KC_X));
-        break;
-      case KC_Z:
-        if (mods & MOD_MASK_SHIFT) {
-          is_apple ? tap_code16(LGUI(LSFT(KC_Z)))
-                   : tap_code16(LCTL(LSFT(KC_Z)));
-        } else {
-          is_apple ? tap_code16(LGUI(KC_Z)) : tap_code16(LCTL(KC_Z));
+        // If any non-GUI modifiers are held that are not allowed for this
+        // shortcut, bail out and let normal processing happen.
+        if (extra & ~entry->other_allowed_mods) {
+          break;
         }
-        break;
-      case KC_A:
-        is_apple ? tap_code16(LGUI(KC_A)) : tap_code16(LCTL(KC_A));
-        break;
-      case KC_S:
-        is_apple ? tap_code16(LGUI(KC_S)) : tap_code16(LCTL(KC_S));
-        break;
-      case KC_T:
-        if (mods & MOD_MASK_SHIFT) {
-          is_apple ? tap_code16(LGUI(LSFT(KC_T)))
-                   : tap_code16(LCTL(LSFT(KC_T)));
-        } else {
-          is_apple ? tap_code16(LGUI(KC_T)) : tap_code16(LCTL(KC_T));
-        }
-        break;
-      case KC_N:
-        if (mods & MOD_MASK_SHIFT) {
-          is_apple ? tap_code16(LGUI(LSFT(KC_N)))
-                   : tap_code16(LCTL(LSFT(KC_N)));
-        } else {
-          is_apple ? tap_code16(LGUI(KC_N)) : tap_code16(LCTL(KC_N));
-        }
-        break;
-      case KC_O:
-        is_apple ? tap_code16(LGUI(KC_O)) : tap_code16(LCTL(KC_O));
-        break;
-      case KC_F:
-        is_apple ? tap_code16(LGUI(KC_F)) : tap_code16(LCTL(KC_F));
-        break;
-      case KC_W:
-        is_apple ? tap_code16(LGUI(KC_W)) : tap_code16(LCTL(KC_W));
-        break;
-      case KC_Q:
-        is_apple ? tap_code16(LGUI(KC_Q)) : tap_code16(LCTL(KC_Q));
-        break;
-      case KC_R:
-        is_apple ? tap_code16(LGUI(KC_R)) : tap_code16(LCTL(KC_R));
-        break;
-      case KC_LEFT:
-        is_apple ? tap_code16(LGUI(KC_LEFT)) : tap_code16(KC_HOME);
-        break;
-      case KC_RIGHT:
-        is_apple ? tap_code16(LGUI(KC_RIGHT)) : tap_code16(KC_END);
-        break;
-      case KC_DOT:
-        is_apple ? tap_code16(LGUI(KC_DOT)) : tap_code16(LCTL(KC_DOT));
-        break;
-      case KC_L:
-        is_apple ? tap_code16(LGUI(KC_L)) : tap_code16(LCTL(KC_L));
-        break;
-      default:
-        handled = false;
-        break;
+
+        uint8_t saved_mods = mods;
+        clear_mods();
+
+        // Apply correct modifier for the OS, to be combined with any of the
+        // other allowed modifiers.
+        add_mods(extra | (is_apple ? MOD_MASK_GUI : MOD_MASK_CTRL));
+        tap_code(base_keycode);
+
+        // Restore original modifier state (including the physically held GUI).
+        clear_mods();
+        set_mods(saved_mods);
+        // we handled it, stop processing
+        return false;
       }
-
-      if (handled) {
-        set_mods(temp_mods);
-        return false; // We handled it, stop processing
-      }
-      set_mods(temp_mods);
     }
   }
 
