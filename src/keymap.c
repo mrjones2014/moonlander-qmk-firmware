@@ -86,8 +86,6 @@ void leader_end_user(void) {
     handle_send_unicode("¯\\_(ツ)_/¯");
   } else if (leader_sequence_two_keys(KC_T, KC_F)) {
     handle_send_unicode("(╯°□°)╯︵ ┻━┻");
-  } else if (leader_sequence_two_keys(KC_MINUS, KC_MINUS)) {
-    tap_code16(QK_BOOTLOADER);
   }
 }
 
