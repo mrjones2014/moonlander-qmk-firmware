@@ -13,8 +13,7 @@
 #endif
 
 enum custom_keycodes {
-  RGB_SLD = ZSA_SAFE_RANGE,
-  FAT_ARROW,
+  FAT_ARROW = ZSA_SAFE_RANGE,
   THIN_ARROW,
   DEL_WORD,
 };
