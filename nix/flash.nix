@@ -54,7 +54,6 @@ writeShellScriptBin "flash" ''
 
   # qmk flash auto-detects bootloader from keyboard.json
   ${qmk}/bin/qmk flash ${firmware_bin} \
-    --keyboard ${build_args.keyboardVariant}
-
-  echo "✓ Flash complete!"
+    --keyboard ${build_args.keyboardVariant} \
+    && echo "✓ Flash complete!"
 ''
