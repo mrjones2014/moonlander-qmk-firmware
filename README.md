@@ -1,11 +1,9 @@
 # Moonlander MK I Custom QMK Firmware
 
-Custom, out-of-tree QMK firmware for ZSA Moonlander with Oryx compatibility, cross-OS shortcuts, and full LSP support in Neovim.
+Custom, out-of-tree QMK firmware for ZSA Moonlander with cross-OS shortcuts, and full LSP support in Neovim.
 
 ## Features
 
-- **Oryx Compatible**: This technique allows you to make layout changes in Oryx, and they will be merged into your custom logic.
-  - This technique is _very loosely_ based on [this blog post](https://blog.zsa.io/oryx-custom-qmk-features/)
 - **Cross-OS Shortcuts**: Same physical keys adapt to macOS (CMD) vs Linux (CTRL) automatically using QMK's OS detection.
 - **LSP setup**: Autocomplete and type checking for QMK firmware development.
   - Run `setup-lsp` after activating the Nix `devShell` provided by `flake.nix`

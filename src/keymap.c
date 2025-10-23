@@ -96,10 +96,6 @@ hsv_t layer_colors[] = {
 };
 
 bool rgb_matrix_indicators_user(void) {
-  if (rawhid_state.rgb_control) {
-    return false;
-  }
-
   uint8_t layer = get_highest_layer(layer_state);
   hsv_t color = layer_colors[layer];
   rgb_t rgb = hsv_to_rgb(color);

@@ -3,11 +3,10 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    # NB: This must be ZSA's fork, or you might lose the ability to connect to Oryx
     qmk-firmware = {
       flake = false;
-      url = "https://github.com/zsa/qmk_firmware.git";
-      ref = "firmware25";
+      url = "https://github.com/qmk/qmk_firmware.git";
+      ref = "0.30.6";
       type = "git";
       submodules = true;
     };

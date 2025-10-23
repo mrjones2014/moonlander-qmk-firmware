@@ -141,10 +141,6 @@
       - -I$STUB_PATH/..
       - -include$STUB_PATH
 
-      # ZSA Oryx module (for rawhid_state)
-      - -I${qmk-firmware}/modules/zsa/oryx
-      - -include${qmk-firmware}/modules/zsa/oryx/oryx.h
-
       # ChibiOS RTOS headers (for CH_CFG_ST_FREQUENCY, sysinterval_t)
       - -I${qmk-firmware}/lib/chibios/os/rt/include
       - -I${qmk-firmware}/lib/chibios/os/common/ports/ARMv7-M
@@ -227,7 +223,6 @@
       - -DSEND_STRING_ENABLE
       - -DMATRIX_ROWS=12
       - -DMATRIX_COLS=7
-      - -DORYX_CONFIGURATOR
       - -DLEADER_ENABLE
       - -DUNICODE_ENABLE
       - -DOS_DETECTION_ENABLE
