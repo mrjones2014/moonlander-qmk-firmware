@@ -1,3 +1,4 @@
+#include "action.h"
 #include "action_util.h"
 #include "keycodes.h"
 #include "quantum.h"
@@ -649,17 +650,10 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
     // "Delete Word" keycode handling
     if (keycode == DEL_WORD) {
-      if (is_apple) {
-        // Alt+Backspace on macOS
-        register_code(KC_LALT);
-        tap_code(KC_BSPC);
-        unregister_code(KC_LALT);
-      } else {
-        // Ctrl+Backspace on Linux
-        register_code(KC_LCTL);
-        tap_code(KC_BSPC);
-        unregister_code(KC_LCTL);
-      }
+      uint8_t mod = is_apple ? KC_LALT : KC_LCTL;
+      register_code(mod);
+      tap_code(KC_BSPC);
+      unregister_code(mod);
       return true;
     }
 
