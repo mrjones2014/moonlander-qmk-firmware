@@ -7,3 +7,7 @@
 #define LEADER_NO_TIMEOUT
 #define LEADER_PER_KEY_TIMING
 #define LEADER_TIMEOUT 250
+#define ZELDA_PUZZLE                                                           \
+  Q__NOTE(_G5), Q__NOTE(_FS5), Q__NOTE(_DS5), Q__NOTE(_A4), Q__NOTE(_GS4),     \
+      Q__NOTE(_E5), Q__NOTE(_GS5), HD_NOTE(_C6),
+#define STARTUP_SONG SONG(ZELDA_PUZZLE)
