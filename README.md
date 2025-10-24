@@ -6,8 +6,8 @@ Custom, out-of-tree QMK firmware for ZSA Moonlander with cross-OS shortcuts, and
 
 - **Cross-OS Shortcuts**: Same physical keys adapt to macOS (CMD) vs Linux (CTRL) automatically using QMK's OS detection.
 - **LSP setup**: Autocomplete and type checking for QMK firmware development.
-  - Run `setup-lsp` after activating the Nix `devShell` provided by `flake.nix`
-  - This sets up a bunch of path hacks required since the code is not nested inside the `qmk_firmware` tree
+  - The `devShell` sets up a `.clangd` file in the proeject root (`.gitignored`)
+  - This sets up a bunch of path hacks required since the code is not nested inside the `qmk_firmware` tree, so it references `/nix/store/*` paths
 - **Nix-managed**: Reproducible builds, all dependencies handled auatomatically
   - This works by essentially patching your configuration into the `qmk_firmware` tree at build time
   - See [build.nix](https://github.com/mrjones2014/moonlander-qmk-firmware/blob/master/nix/build.nix)
@@ -20,9 +20,7 @@ You can use `direnv` to manage the Nix `devShell`. I highly recommend using [nix
 ```bash
 direnv allow
 # from now on, the devShell will activate whenever you `cd` into the project
-setup-lsp
-# should auto-generate .clangd and some stubs
-# you only need to run this once, unless `qmk_firmware` is updated in flake.lock
+# the repo root should have an auto-generated .clangd config file
 nvim src/keymap.c
 ```
 
@@ -44,14 +42,15 @@ nix build .#flash
 ## Project structure
 
 ```
-├── flake.nix         # devShell and package builds
+├── flake.nix              # devShell and package builds
 ├── nix
-│   ├── build.nix     # Nix build derivation
-│   └── setup-lsp.nix # Setup LSP path hacks
+│   ├── build.nix          # Nix derivation to build firmware
+│   ├── flash.nix          # Nix derivation to build firmware and flash onto keyboard
+│   ├── build-args.nix     # Nix derivation to set args passed to `qmk compile`/`qmk flash`
+│   └── clangd-config.nix  # Nix derivation to generate .clangd config referencing qmk paths from /nix/store/*
 ├── README.md
-└── src               # See QMK docs for more details on these files
-    ├── config.h      # Config overrides
-    ├── keymap.c      # Keymap implementation
-    ├── keymap.json   # Custom modules etc.
-    └── rules.mk      # Custom build rules
+└── src                    # See QMK docs for more details on these files
+    ├── config.h           # Config overrides
+    ├── keymap.c           # Keymap implementation
+    └── rules.mk           # Custom build rules
 ```

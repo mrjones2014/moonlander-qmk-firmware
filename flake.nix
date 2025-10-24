@@ -32,7 +32,7 @@
           keyboard = "zsa/moonlander";
           src = ./src;
         };
-        setup-lsp = import ./nix/setup-lsp.nix {
+        clangd-config = import ./nix/clangd-config.nix {
           inherit pkgs;
           inherit qmk-firmware;
         };
@@ -46,8 +46,10 @@
           QMK_HOME = "${qmk-firmware}";
           packages = [
             pkgs.qmk
-            setup-lsp
           ];
+          shellHook = ''
+            ln -sf "${clangd-config}/.clangd" .clangd
+          '';
         };
       }
     );
