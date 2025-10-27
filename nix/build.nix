@@ -25,6 +25,8 @@ stdenv.mkDerivation {
   '';
 
   buildPhase = ''
+    ls ${build_args.keymapDir}
+    echo "${build_args.keymapName}"
     qmk compile \
         --env SKIP_GIT=true \
         --env QMK_HOME=$PWD \
@@ -32,14 +34,12 @@ stdenv.mkDerivation {
         --env BUILD_DIR=${build_args.buildDir} \
         --env TARGET=${build_args.targetName} \
         --keyboard ${build_args.keyboardVariant} \
-        --keymap ${build_args.keymapName} \
-        --compiledb
+        --keymap ${build_args.keymapName}
   '';
 
   installPhase = ''
     mkdir -p $out/bin
     cp ${build_args.buildDir}/*.{hex,bin,elf,dfu,uf2,eep} $out/bin 2>/dev/null || true
-    cp compile_commands.json $out/
   '';
 
   dontFixup = true;

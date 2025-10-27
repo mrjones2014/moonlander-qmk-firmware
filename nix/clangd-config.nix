@@ -1,7 +1,7 @@
 # Derivation to generate a ready-to-use .clangd configuration and Moonlander
 # layout stub header for clangd LSP analysis. Produces:
 #   $out/.clangd
-#   $out/stubs/layout_moonlander.h
+#   $out/stubs/layout_stubs.h
 #
 # Rationale: Instead of a runtime script that mutates the working tree, this
 # derivation creates immutable artifacts that editors can symlink/copy.
@@ -13,7 +13,7 @@ let
   src = qmk-firmware;
 in
 stdenv.mkDerivation {
-  pname = "qmk-moonlander-clangd-config";
+  pname = "qmk-clangd-config";
   version = "1.0";
 
   inherit src;
@@ -82,7 +82,7 @@ stdenv.mkDerivation {
 
     mkdir -p $out/stubs
 
-    cat > $out/stubs/layout_moonlander.h <<'LAYOUT_STUB'
+    cat > $out/stubs/layout_stubs.h <<'LAYOUT_STUB'
     #pragma once
     #include <stdint.h>
 
@@ -108,9 +108,20 @@ stdenv.mkDerivation {
         { 0, 0, ka2, ka3, ka4, ka5, ka6 }, \
         { 0, 0, 0, kb3, kb4, kb5, kb6 } \
     }
+
+    #define LAYOUT( \
+      k00, \
+      k10, k11, k12, \
+      k20, k21, k22 \
+    ) \
+    { \
+      { k00, 0, 0 }, \
+      { k10, k11, k12 }, \
+      { k20, k21, k22 } \
+    }
     LAYOUT_STUB
 
-    STUB_PATH="$out/stubs/layout_moonlander.h"
+    STUB_PATH="$out/stubs/layout_stubs.h"
 
     echo "Generating .clangd file..."
     # Choose system include root based on platform
@@ -212,12 +223,11 @@ stdenv.mkDerivation {
         - -USTM32G0
         - -USTM32H7
 
-        # Keyboard defines
-        - -DQMK_KEYBOARD="zsa/moonlander"
-        - -DQMK_KEYBOARD_H="moonlander.h"
-        - -DKEYBOARD_zsa_moonlander
-
         # Features
+        - -DENCODER_ENABLE
+        - -DENCODER_MAP_ENABLE
+        - -DNUM_ENCODERS=1
+        - -include${qmk-firmware}/quantum/encoder.h
         - -DRGB_MATRIX_ENABLE
         - -DRGB_MATRIX_LED_COUNT=72
         - -DAUDIO_ENABLE

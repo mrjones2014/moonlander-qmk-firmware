@@ -27,10 +27,17 @@
         };
         build = pkgs.callPackage ./nix/build.nix { };
         flash = pkgs.callPackage ./nix/flash.nix { };
-        build_args = {
-          inherit qmk-firmware;
-          keyboard = "zsa/moonlander";
-          src = ./src;
+        keyboards = {
+          moonlander = {
+            inherit qmk-firmware;
+            keyboard = "zsa/moonlander";
+            src = ./src/moonlander;
+          };
+          togkey_pad_plus = {
+            inherit qmk-firmware;
+            keyboard = "togkey/pad_plus";
+            src = ./src/togkey_pad_plus;
+          };
         };
         clangd-config = import ./nix/clangd-config.nix {
           inherit pkgs;
@@ -39,8 +46,14 @@
       in
       {
         packages = {
-          default = build build_args;
-          flash = flash build_args;
+          moonlander = {
+            build = build keyboards.moonlander;
+            flash = flash keyboards.moonlander;
+          };
+          togkey = {
+            build = build keyboards.togkey_pad_plus;
+            flash = flash keyboards.togkey_pad_plus;
+          };
         };
         devShells.default = pkgs.mkShell {
           QMK_HOME = "${qmk-firmware}";
