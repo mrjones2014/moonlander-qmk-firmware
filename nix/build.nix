@@ -2,6 +2,7 @@
   lib,
   qmk,
   stdenv,
+  python313,
   ...
 }:
 {
@@ -22,12 +23,13 @@ stdenv.mkDerivation {
   postPatch = ''
     mkdir -p ${build_args.keymapDir}
     cp -r ${src}/* ${build_args.keymapDir}/
+    substituteInPlace ./util/uf2conv.py \
+      --replace "#!/usr/bin/env python3" "#!${python313}/bin/python3"
   '';
 
   buildPhase = ''
-    ls ${build_args.keymapDir}
-    echo "${build_args.keymapName}"
     qmk compile \
+        -j 4 \
         --env SKIP_GIT=true \
         --env QMK_HOME=$PWD \
         --env QMK_FIRMWARE=$PWD \
