@@ -19,7 +19,7 @@ jobs:
       - name: Build firmware with Nix
         run: nix build
       - name: Upload firmware artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: moonlander-firmware-${{ github.sha }}
           path: result/bin/moonlander-default.bin
