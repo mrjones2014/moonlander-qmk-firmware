@@ -1,6 +1,10 @@
-# Moonlander MK I Custom QMK Firmware
+# Custom QMK Firmwares
 
-Custom, out-of-tree QMK firmware for ZSA Moonlander with cross-OS shortcuts, and full LSP support in Neovim.
+Custom, out-of-tree QMK firmwares, with `clangd` LSP setup.
+
+- ZSA Moonlander MK I
+  - Cross-OS shortcuts (ctrl vs. cmd shortcuts on Linux vs. macOS)
+- TogKey Pad Plus
 
 ## Features
 
@@ -29,28 +33,14 @@ nvim src/keymap.c
 Building the firmware is a Nix derivation:
 
 ```bash
-nix build
-# outputs to ./result/bin/moonlander-default.{bin,elf,hex}
+nix build .#moonlander.build
+nix build .#togkey.build
+# outputs to ./result/bin/*
 ```
 
 You can also build + flash the firmware in one step by running:
 
 ```bash
-nix build .#flash
-```
-
-## Project structure
-
-```
-├── flake.nix              # devShell and package builds
-├── nix
-│   ├── build.nix          # Nix derivation to build firmware
-│   ├── flash.nix          # Nix derivation to build firmware and flash onto keyboard
-│   ├── build-args.nix     # Nix derivation to set args passed to `qmk compile`/`qmk flash`
-│   └── clangd-config.nix  # Nix derivation to generate .clangd config referencing qmk paths from /nix/store/*
-├── README.md
-└── src                    # See QMK docs for more details on these files
-    ├── config.h           # Config overrides
-    ├── keymap.c           # Keymap implementation
-    └── rules.mk           # Custom build rules
+nix run .#moonlander.flash
+nix run .#togkey.flash
 ```
