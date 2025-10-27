@@ -1,3 +1,4 @@
+#include "util.h"
 #include QMK_KEYBOARD_H
 #include "oled_driver.h"
 #include "quantum.h"
@@ -141,22 +142,13 @@ static bool boot_showing = false;
 static bool boot_cleared = false;
 static uint16_t boot_show_ts = 0;
 
-// 1st layer on the cycle
-#define LAYER_CYCLE_START 0
-// Last layer on the cycle
-#define LAYER_CYCLE_END 3
+#define NUM_LAYERS ARRAY_SIZE(keymaps)
 
 static void cycle_layer(void) {
   uint8_t current_layer = get_highest_layer(layer_state);
-
-  // Check if we are within the range, if not quit
-  if (current_layer > LAYER_CYCLE_END || current_layer < LAYER_CYCLE_START) {
-    return;
-  }
-
   uint8_t next_layer = current_layer + 1;
-  if (next_layer > LAYER_CYCLE_END) {
-    next_layer = LAYER_CYCLE_START;
+  if (next_layer >= NUM_LAYERS) {
+    next_layer = 0;
   }
   layer_move(next_layer);
 }
