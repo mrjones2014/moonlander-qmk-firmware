@@ -12,6 +12,7 @@
   variant ? null,
   target ? null,
 }:
+
 let
   firmware = (import ./build.nix { inherit lib qmk stdenv; }) {
     inherit
@@ -23,37 +24,33 @@ let
       ;
   };
   build_args = (import ./build-args.nix { inherit lib; }) { inherit keyboard variant target; };
-  # Parse keyboard.json to determine bootloader type
-  keyboardJson = builtins.fromJSON (
-    builtins.readFile "${qmk-firmware}/${build_args.keyboardDir}/keyboard.json"
-  );
-  bootloader = keyboardJson.bootloader or "unknown";
 
-  # Map bootloader to file extension
-  fileExtension =
-    if
-      bootloader == "caterina" # Arduino/AVR
-      || bootloader == "atmel-dfu" # AVR DFU
-      || bootloader == "halfkay" # Teensy
-      || bootloader == "qmk-dfu" # QMK DFU (AVR)
-      || bootloader == "usbasploader" # USBasp
-      || bootloader == "bootloadhid" # bootloadHID
-    then
-      "hex"
-    else if lib.hasInfix "rp2040" bootloader then
-      "uf2" # RP2040
-    else
-      "bin";
-  firmware_bin = "${firmware}/bin/${build_args.targetName}.${fileExtension}";
+  firmwareDir = "${firmware}/bin";
+  targetBase = build_args.targetName;
 in
 writeShellScriptBin "flash" ''
-  set -e
+  set -euo pipefail
 
+  dir="${firmwareDir}"
+  base="${targetBase}"
+  kb="${build_args.keyboardVariant}"
+
+  pick_fw() {
+    if   [ -f "$dir/$base.uf2" ]; then echo "$dir/$base.uf2"
+    elif [ -f "$dir/$base.hex" ]; then echo "$dir/$base.hex"
+    elif [ -f "$dir/$base.bin" ]; then echo "$dir/$base.bin"
+    else
+      echo "No firmware artifact found for '$base' in '$dir' (.uf2/.hex/.bin)." >&2
+      exit 1
+    fi
+  }
+
+  fw="$(pick_fw)"
+  echo "Using firmware: $fw"
   echo "Waiting for keyboard in bootloader mode..."
   echo "(Press your reset button now)"
 
-  # qmk flash auto-detects bootloader from keyboard.json
-  ${qmk}/bin/qmk flash ${firmware_bin} \
-    --keyboard ${build_args.keyboardVariant} \
+  # Let QMK handle the actual flashing once we select the right artifact.
+  "${qmk}/bin/qmk" flash "$fw" --keyboard "${build_args.keyboardVariant}" \
     && echo "✓ Flash complete!"
 ''
