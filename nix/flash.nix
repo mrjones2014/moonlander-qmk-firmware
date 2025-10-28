@@ -3,6 +3,7 @@
   qmk,
   stdenv,
   writeShellScriptBin,
+  python313,
   ...
 }:
 {
@@ -14,15 +15,24 @@
 }:
 
 let
-  firmware = (import ./build.nix { inherit lib qmk stdenv; }) {
-    inherit
-      qmk-firmware
-      src
-      keyboard
-      variant
-      target
-      ;
-  };
+  firmware =
+    (import ./build.nix {
+      inherit
+        lib
+        qmk
+        stdenv
+        python313
+        ;
+    })
+      {
+        inherit
+          qmk-firmware
+          src
+          keyboard
+          variant
+          target
+          ;
+      };
   build_args = (import ./build-args.nix { inherit lib; }) { inherit keyboard variant target; };
 
   firmwareDir = "${firmware}/bin";
@@ -45,12 +55,24 @@ writeShellScriptBin "flash" ''
     fi
   }
 
+  on_exit() {
+    code=$?
+    if [ $code -eq 0 ]; then
+      echo "✓ Flash complete!"
+    elif [ $code -eq 130 ]; then
+      # 130 is the standard exit code for Ctrl+C
+      echo "✗ Flash aborted by user"
+    else
+      echo "✗ Flash failed (exit code $code)"
+    fi
+  }
+  trap on_exit EXIT
+
   fw="$(pick_fw)"
   echo "Using firmware: $fw"
   echo "Waiting for keyboard in bootloader mode..."
   echo "(Press your reset button now)"
 
   # Let QMK handle the actual flashing once we select the right artifact.
-  "${qmk}/bin/qmk" flash "$fw" --keyboard "${build_args.keyboardVariant}" \
-    && echo "✓ Flash complete!"
+  "${qmk}/bin/qmk" flash "$fw" --keyboard "${build_args.keyboardVariant}"
 ''
