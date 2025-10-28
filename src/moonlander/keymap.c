@@ -1,6 +1,8 @@
 #include "action_util.h"
 #include "color.h"
 #include "keycodes.h"
+#include "keymap_us.h"
+#include "quantum_keycodes.h"
 #include QMK_KEYBOARD_H
 #include "os_detection.h"
 #include "quantum.h"
@@ -17,18 +19,13 @@ enum custom_keycodes {
   DEL_WORD,
 };
 
-enum tap_dance_codes {
-  DANCE_0,
-  DANCE_1,
-};
-
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     // base
     [0] = LAYOUT_moonlander(
-        KC_ESCAPE, KC_1, KC_2, KC_3, KC_4, KC_5, TD(DANCE_0),                                                            KC_AUDIO_VOL_UP, KC_6, KC_7, KC_8, KC_9, KC_0, KC_MINUS,
-        KC_TAB, KC_Q, KC_W, KC_E, KC_R, KC_T, TD(DANCE_1),                                                                      KC_AUDIO_VOL_DOWN, KC_Y, KC_U, KC_I, KC_O, KC_P, KC_BSLS,
-        KC_LEFT_SHIFT, KC_A, KC_S, KC_D, KC_F, KC_G, KC_HYPR,                                                                   KC_MEH, KC_H, KC_J, KC_K, KC_L, KC_SCLN, KC_QUOTE,
+        KC_ESCAPE, KC_1, KC_2, KC_3, KC_4, KC_5, KC_PRINT_SCREEN,                                                           KC_F5, KC_6, KC_7, KC_8, KC_9, KC_0, KC_MINUS,
+        KC_TAB, KC_Q, KC_W, KC_E, KC_R, KC_T, KC_HYPR,                                                                      KC_MEH, KC_Y, KC_U, KC_I, KC_O, KC_P, KC_BSLS,
+        KC_LEFT_SHIFT, KC_A, KC_S, KC_D, KC_F, KC_G, KC_LEFT_PAREN,                                                         KC_RIGHT_PAREN, KC_H, KC_J, KC_K, KC_L, KC_SCLN, KC_QUOTE,
         KC_GRAVE, MT(MOD_LCTL, KC_Z), KC_X, KC_C, KC_V, KC_B,                                                                   KC_N, KC_M, KC_COMMA, KC_DOT, KC_SLASH, KC_EQUAL,
         KC_LEFT_CTRL, KC_TRANSPARENT, KC_LEFT_ALT, KC_LEFT, KC_RIGHT,    KC_LEFT_ALT,                      LGUI(KC_SPACE),           KC_DOWN, KC_UP, KC_LBRC, KC_RBRC, TO(2),
                                                          KC_SPACE, KC_BSPC, KC_LEFT_GUI,      LCTL(LSFT(KC_SPACE)), KC_LEFT_SHIFT, LT(1, KC_ENTER) // thumbs
@@ -97,136 +94,6 @@ bool rgb_matrix_indicators_user(void) {
 
   return true;
 }
-
-typedef struct {
-  bool is_press_action;
-  uint8_t step;
-} tap;
-
-enum {
-  SINGLE_TAP = 1,
-  SINGLE_HOLD,
-  DOUBLE_TAP,
-  DOUBLE_HOLD,
-  DOUBLE_SINGLE_TAP,
-  MORE_TAPS
-};
-
-static tap dance_state[6];
-
-uint8_t dance_step(tap_dance_state_t *state) {
-  if (state->count == 1) {
-    if (state->interrupted || !state->pressed)
-      return SINGLE_TAP;
-    else
-      return SINGLE_HOLD;
-  } else if (state->count == 2) {
-    if (state->interrupted)
-      return DOUBLE_SINGLE_TAP;
-    else if (state->pressed)
-      return DOUBLE_HOLD;
-    else
-      return DOUBLE_TAP;
-  }
-  return MORE_TAPS;
-}
-
-void on_dance_0(tap_dance_state_t *state, void *user_data) {
-  if (state->count == 3) {
-    tap_code16(KC_PSCR);
-    tap_code16(KC_PSCR);
-    tap_code16(KC_PSCR);
-  }
-  if (state->count > 3) {
-    tap_code16(KC_PSCR);
-  }
-}
-
-void dance_0_finished(tap_dance_state_t *state, void *user_data) {
-  dance_state[0].step = dance_step(state);
-  switch (dance_state[0].step) {
-  case SINGLE_TAP:
-    register_code16(KC_PSCR);
-    break;
-  case SINGLE_HOLD:
-    register_code16(LGUI(LSFT(KC_4)));
-    break;
-  case DOUBLE_TAP:
-    register_code16(LGUI(LSFT(KC_3)));
-    break;
-  case DOUBLE_SINGLE_TAP:
-    tap_code16(KC_PSCR);
-    register_code16(KC_PSCR);
-  }
-}
-
-void dance_0_reset(tap_dance_state_t *state, void *user_data) {
-  wait_ms(10);
-  switch (dance_state[0].step) {
-  case SINGLE_TAP:
-    unregister_code16(KC_PSCR);
-    break;
-  case SINGLE_HOLD:
-    unregister_code16(LGUI(LSFT(KC_4)));
-    break;
-  case DOUBLE_TAP:
-    unregister_code16(LGUI(LSFT(KC_3)));
-    break;
-  case DOUBLE_SINGLE_TAP:
-    unregister_code16(KC_PSCR);
-    break;
-  }
-  dance_state[0].step = 0;
-}
-
-void on_dance_1(tap_dance_state_t *state, void *user_data) {
-  if (state->count == 3) {
-    tap_code16(KC_MEDIA_PLAY_PAUSE);
-    tap_code16(KC_MEDIA_PLAY_PAUSE);
-    tap_code16(KC_MEDIA_PLAY_PAUSE);
-  }
-  if (state->count > 3) {
-    tap_code16(KC_MEDIA_PLAY_PAUSE);
-  }
-}
-
-void dance_1_finished(tap_dance_state_t *state, void *user_data) {
-  dance_state[1].step = dance_step(state);
-  switch (dance_state[1].step) {
-  case SINGLE_TAP:
-    register_code16(KC_MEDIA_PLAY_PAUSE);
-    break;
-  case DOUBLE_TAP:
-    register_code16(KC_MEDIA_NEXT_TRACK);
-    break;
-  case DOUBLE_SINGLE_TAP:
-    tap_code16(KC_MEDIA_PLAY_PAUSE);
-    register_code16(KC_MEDIA_PLAY_PAUSE);
-  }
-}
-
-void dance_1_reset(tap_dance_state_t *state, void *user_data) {
-  wait_ms(10);
-  switch (dance_state[1].step) {
-  case SINGLE_TAP:
-    unregister_code16(KC_MEDIA_PLAY_PAUSE);
-    break;
-  case DOUBLE_TAP:
-    unregister_code16(KC_MEDIA_NEXT_TRACK);
-    break;
-  case DOUBLE_SINGLE_TAP:
-    unregister_code16(KC_MEDIA_PLAY_PAUSE);
-    break;
-  }
-  dance_state[1].step = 0;
-}
-
-tap_dance_action_t tap_dance_actions[] = {
-    [DANCE_0] = ACTION_TAP_DANCE_FN_ADVANCED(on_dance_0, dance_0_finished,
-                                             dance_0_reset),
-    [DANCE_1] = ACTION_TAP_DANCE_FN_ADVANCED(on_dance_1, dance_1_finished,
-                                             dance_1_reset),
-};
 
 // Declaratively define cross-OS GUI/Ctrl shortcuts
 

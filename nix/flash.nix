@@ -46,9 +46,9 @@ writeShellScriptBin "flash" ''
   kb="${build_args.keyboardVariant}"
 
   pick_fw() {
-    if   [ -f "$dir/$base.uf2" ]; then echo "$dir/$base.uf2"
+    if [ -f "$dir/$base.bin" ]; then echo "$dir/$base.bin"
+    elif [ -f "$dir/$base.uf2" ]; then echo "$dir/$base.uf2"
     elif [ -f "$dir/$base.hex" ]; then echo "$dir/$base.hex"
-    elif [ -f "$dir/$base.bin" ]; then echo "$dir/$base.bin"
     else
       echo "No firmware artifact found for '$base' in '$dir' (.uf2/.hex/.bin)." >&2
       exit 1
