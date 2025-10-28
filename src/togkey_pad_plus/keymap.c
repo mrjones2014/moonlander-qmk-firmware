@@ -447,46 +447,50 @@ static const char PROGMEM mask_row_4[] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
-#define FRAME_DELAY 50
+#define FRAME_DELAY 40
 #define SHIP_WIDTH 32
+#define SHIP_LEFT_TRIM 6
 #define SCREEN_WIDTH 128
+#define SHIP_STEP_MS 100
+#define BG_STEP_MS 40
+#define BG_WRAP (SCREEN_WIDTH * 2)
 
 static void render_space(void) {
-  static uint32_t last_frame_time = 0;
-  static uint16_t frame = 0;
+  static uint32_t last_ship = 0, last_bg = 0;
+  static uint16_t ship_frame = 0;
+  static uint16_t bg_px = 0;
+
   uint32_t now = timer_read();
 
-  // Advance frame every FRAME_DELAY ms
-  if (timer_elapsed(last_frame_time) > FRAME_DELAY) {
-    frame++;
-    last_frame_time = now;
+  // Ship ticks
+  if (timer_elapsed(last_ship) >= SHIP_STEP_MS) {
+    ship_frame++;
+    last_ship = now;
+  }
+  // Background ticks (faster)
+  if (timer_elapsed(last_bg) >= BG_STEP_MS) {
+    bg_px = (bg_px + 1) % BG_WRAP;
+    last_bg = now;
   }
 
-  // Background scroll continues in the same direction as before
-  uint16_t scroll_speed = (frame / 4) % (SCREEN_WIDTH * 2);
-
-  // Ship ping-pongs LEFT<->RIGHT, never exceeding screen bounds
-  const uint8_t span = SCREEN_WIDTH - SHIP_WIDTH; // last valid left X
-  uint16_t m = (frame / 2) % (2 * span);          // controls speed
+  // Ping-pong X for ship, bounded to include padding
+  const uint8_t span = SCREEN_WIDTH - SHIP_WIDTH;
+  uint16_t m = (ship_frame) % (2 * span);
   uint8_t ship_offset = (m < span) ? m : (uint8_t)(2 * span - 1 - m);
 
+  // Draw rows: fill bg, then overlay visible ship band
   char render_row[SCREEN_WIDTH];
 
-// Helper macro: draw full background row, then overlay ship row within
-// [ship_offset, ship_offset+SHIP_WIDTH)
 #define DRAW_ROW(space_row_n, mask_row_n, ship_row_n)                          \
   do {                                                                         \
-    /*  draw the scrolling background across the whole row */                  \
-    for (int i = 0; i < SCREEN_WIDTH; i++) {                                   \
-      render_row[i] = pgm_read_byte((space_row_n) + i + scroll_speed);         \
-    }                                                                          \
-    /* then overlay ship only over its width, fully within screen bounds */    \
+    for (int i = 0; i < SCREEN_WIDTH; i++)                                     \
+      render_row[i] = pgm_read_byte((space_row_n) + i + bg_px);                \
     for (int x = 0; x < SHIP_WIDTH; x++) {                                     \
-      int dst = ship_offset + x;                                               \
+      int dst = ship_offset + SHIP_LEFT_TRIM + x;                              \
       if ((unsigned)dst < SCREEN_WIDTH) {                                      \
         uint8_t bg = render_row[dst];                                          \
-        uint8_t mask = pgm_read_byte((mask_row_n) + x);                        \
-        uint8_t shp = pgm_read_byte((ship_row_n) + x);                         \
+        uint8_t mask = pgm_read_byte((mask_row_n) + SHIP_LEFT_TRIM + x);       \
+        uint8_t shp = pgm_read_byte((ship_row_n) + SHIP_LEFT_TRIM + x);        \
         render_row[dst] = (bg & mask) | shp;                                   \
       }                                                                        \
     }                                                                          \
@@ -495,13 +499,10 @@ static void render_space(void) {
 
   oled_set_cursor(0, 0);
   DRAW_ROW(space_row_1, mask_row_1, ship_row_1);
-
   oled_set_cursor(0, 1);
   DRAW_ROW(space_row_2, mask_row_2, ship_row_2);
-
   oled_set_cursor(0, 2);
   DRAW_ROW(space_row_3, mask_row_3, ship_row_3);
-
   oled_set_cursor(0, 3);
   DRAW_ROW(space_row_4, mask_row_4, ship_row_4);
 
