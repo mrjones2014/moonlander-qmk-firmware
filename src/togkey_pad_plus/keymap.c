@@ -364,8 +364,14 @@ static const char PROGMEM bongocat_frames[][1024] = {
 // show the bootloader image for 1 second
 #define BOOT_SHOW_MS 1000
 
+// OLED doesn't turn off due to inactivity when there is an animation
+// (it considers updating the OLED itself as activity), so we track
+// last keypress time to implement our own timeout.
+uint32_t last_keypress = 0;
+
 // change volume with encoder turn
 bool encoder_update_user(uint8_t index, bool clockwise) {
+  last_keypress = timer_read32();
   tap_code(clockwise ? KC_VOLU : KC_VOLD);
   return false; // we handled it
 }
@@ -419,6 +425,10 @@ void handle_send_unicode(const char *str) {
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  if (record->event.pressed) {
+    last_keypress = timer_read32();
+  }
+
   switch (keycode) {
   case ENC_BTN:
     if (record->event.pressed) {
@@ -462,7 +472,10 @@ void matrix_scan_user(void) {
   }
 }
 
-void keyboard_post_init_user(void) { oled_on(); }
+void keyboard_post_init_user(void) {
+  oled_on();
+  last_keypress = timer_read32();
+}
 
 bool oled_task_user(void) {
   if (boot_showing) {
@@ -474,6 +487,13 @@ bool oled_task_user(void) {
     }
 
     return false;
+  }
+
+  if (timer_elapsed32(last_keypress) >= OLED_TIMEOUT) {
+    oled_off();
+    return false;
+  } else {
+    oled_on();
   }
 
   uint8_t frame = (timer_read() / 100) % BONGOCAT_FRAMES;
