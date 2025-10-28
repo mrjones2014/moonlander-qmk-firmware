@@ -448,71 +448,64 @@ static const char PROGMEM mask_row_4[] = {
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
 #define FRAME_DELAY 50
+#define SHIP_WIDTH 32
+#define SCREEN_WIDTH 128
 
 static void render_space(void) {
   static uint32_t last_frame_time = 0;
   static uint16_t frame = 0;
   uint32_t now = timer_read();
 
-  // Advance frame every 100ms
+  // Advance frame every FRAME_DELAY ms
   if (timer_elapsed(last_frame_time) > FRAME_DELAY) {
     frame++;
     last_frame_time = now;
   }
 
-  // Compute position and scroll offset based on frame
-  uint8_t ship_offset = (frame / 2) % 128; // moves horizontally
-  uint8_t scroll_speed = (frame / 4) % (128 * 2);
+  // Background scroll continues in the same direction as before
+  uint16_t scroll_speed = (frame / 4) % (SCREEN_WIDTH * 2);
 
-  char render_row[128];
-  int i;
+  // Ship ping-pongs LEFT<->RIGHT, never exceeding screen bounds
+  const uint8_t span = SCREEN_WIDTH - SHIP_WIDTH; // last valid left X
+  uint16_t m = (frame / 2) % (2 * span);          // controls speed
+  uint8_t ship_offset = (m < span) ? m : (uint8_t)(2 * span - 1 - m);
+
+  char render_row[SCREEN_WIDTH];
+
+// Helper macro: draw full background row, then overlay ship row within
+// [ship_offset, ship_offset+SHIP_WIDTH)
+#define DRAW_ROW(space_row_n, mask_row_n, ship_row_n)                          \
+  do {                                                                         \
+    /*  draw the scrolling background across the whole row */                  \
+    for (int i = 0; i < SCREEN_WIDTH; i++) {                                   \
+      render_row[i] = pgm_read_byte((space_row_n) + i + scroll_speed);         \
+    }                                                                          \
+    /* then overlay ship only over its width, fully within screen bounds */    \
+    for (int x = 0; x < SHIP_WIDTH; x++) {                                     \
+      int dst = ship_offset + x;                                               \
+      if ((unsigned)dst < SCREEN_WIDTH) {                                      \
+        uint8_t bg = render_row[dst];                                          \
+        uint8_t mask = pgm_read_byte((mask_row_n) + x);                        \
+        uint8_t shp = pgm_read_byte((ship_row_n) + x);                         \
+        render_row[dst] = (bg & mask) | shp;                                   \
+      }                                                                        \
+    }                                                                          \
+    oled_write_raw(render_row, SCREEN_WIDTH);                                  \
+  } while (0)
 
   oled_set_cursor(0, 0);
-  for (i = 0; i < ship_offset; i++) {
-    render_row[i] = pgm_read_byte(space_row_1 + i + scroll_speed);
-  }
-  for (i = ship_offset; i < 128; i++) {
-    render_row[i] = (pgm_read_byte(space_row_1 + i + scroll_speed) &
-                     pgm_read_byte(mask_row_1 + i - ship_offset)) |
-                    pgm_read_byte(ship_row_1 + i - ship_offset);
-  }
-  oled_write_raw(render_row, 128);
+  DRAW_ROW(space_row_1, mask_row_1, ship_row_1);
 
   oled_set_cursor(0, 1);
-  for (i = 0; i < ship_offset; i++) {
-    render_row[i] = pgm_read_byte(space_row_2 + i + scroll_speed);
-  }
-  for (i = ship_offset; i < 128; i++) {
-    render_row[i] = (pgm_read_byte(space_row_2 + i + scroll_speed) &
-                     pgm_read_byte(mask_row_2 + i - ship_offset)) |
-                    pgm_read_byte(ship_row_2 + i - ship_offset);
-  }
-  oled_write_raw(render_row, 128);
+  DRAW_ROW(space_row_2, mask_row_2, ship_row_2);
 
   oled_set_cursor(0, 2);
-  for (i = 0; i < ship_offset; i++) {
-    render_row[i] = pgm_read_byte(space_row_3 + i + scroll_speed);
-  }
-  for (i = ship_offset; i < 128; i++) {
-    render_row[i] = (pgm_read_byte(space_row_3 + i + scroll_speed) &
-                     pgm_read_byte(mask_row_3 + i - ship_offset)) |
-                    pgm_read_byte(ship_row_3 + i - ship_offset);
-  }
-  oled_write_raw(render_row, 128);
+  DRAW_ROW(space_row_3, mask_row_3, ship_row_3);
 
   oled_set_cursor(0, 3);
-  for (i = 0; i < ship_offset; i++) {
-    render_row[i] = pgm_read_byte(space_row_4 + i + scroll_speed);
-  }
-  for (i = ship_offset; i < 128; i++) {
-    render_row[i] = (pgm_read_byte(space_row_4 + i + scroll_speed) &
-                     pgm_read_byte(mask_row_4 + i - ship_offset)) |
-                    pgm_read_byte(ship_row_4 + i - ship_offset);
-  }
-  oled_write_raw(render_row, 128);
+  DRAW_ROW(space_row_4, mask_row_4, ship_row_4);
 
-  // Smooth looping background scroll
-  state = (state + 1) % (128 * 2);
+#undef DRAW_ROW
 }
 
 bool oled_task_user(void) {
