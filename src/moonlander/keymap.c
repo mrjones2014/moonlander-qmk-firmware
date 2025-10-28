@@ -65,28 +65,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 void keyboard_post_init_user(void) { rgb_matrix_enable(); }
 
-void handle_send_unicode(const char *str) {
-  os_variant_t detected_os = detected_host_os();
-  if (detected_os == OS_MACOS) {
-    set_unicode_input_mode(UNICODE_MODE_MACOS);
-  } else if (detected_os == OS_LINUX) {
-    set_unicode_input_mode(UNICODE_MODE_LINUX);
-  } else {
-    return;
-  }
-  unicode_input_start();
-  send_unicode_string(str);
-  unicode_input_finish();
-}
-
-void leader_end_user(void) {
-  if (leader_sequence_two_keys(KC_S, KC_H)) {
-    handle_send_unicode("¯\\_(ツ)_/¯");
-  } else if (leader_sequence_two_keys(KC_T, KC_F)) {
-    handle_send_unicode("(╯°□°)╯︵ ┻━┻");
-  }
-}
-
 hsv_t layer_colors[] = {
     {0, 255, 120},   // Layer 0: red
     {96, 255, 120},  // Layer 1: green
