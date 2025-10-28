@@ -462,8 +462,9 @@ void matrix_scan_user(void) {
   }
 }
 
+void keyboard_post_init_user(void) { oled_on(); }
+
 bool oled_task_user(void) {
-  oled_on();
   if (boot_showing) {
     oled_write_raw_P(bootloader_reset_img, sizeof(bootloader_reset_img));
 
