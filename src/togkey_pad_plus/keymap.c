@@ -1,3 +1,4 @@
+#include "action.h"
 #include "keycodes.h"
 #include "util.h"
 #include QMK_KEYBOARD_H
@@ -59,9 +60,7 @@ void handle_send_unicode(const char *str) {
   } else {
     return;
   }
-  unicode_input_start();
   send_unicode_string(str);
-  unicode_input_finish();
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -80,7 +79,21 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     return false;
   case UC_SHRUG:
     if (record->event.pressed) {
-      handle_send_unicode("¯\\_(ツ)_/¯");
+      // a little more complicated to avoid rich text editors from
+      // turning the underscores into italics; this essentially does
+      // - send the first part up to the 2nd underscore
+      // - send a space
+      // - send the 2nd underscore
+      // - send left arrow key and backspace to delete the space
+      // - send right arrow key to move cursor after the 2nd underscore
+      // - send the rest of the string
+      handle_send_unicode("¯\\_(ツ)");
+      tap_code_delay(KC_SPACE, 40);
+      handle_send_unicode("_");
+      tap_code(KC_LEFT);
+      tap_code(KC_BSPC);
+      tap_code(KC_RIGHT);
+      handle_send_unicode("/¯");
       return false;
     }
     break;
